@@ -1,0 +1,1 @@
+# snowpark-scala-template
