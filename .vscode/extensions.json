@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "vscjava.vscode-java-pack",
+        "scalameta.metals",  // Scala code completion
+        "snowflake.snowflake-vsc",
+        "me-dutour-mathieu.vscode-github-actions"
+    ]
+}
