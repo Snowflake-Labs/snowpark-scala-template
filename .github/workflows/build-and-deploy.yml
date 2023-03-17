@@ -1,0 +1,69 @@
+name: Deploy Snowpark Apps
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  SNOWSQL_ACCOUNT: ${{ secrets.SNOWSQL_ACCOUNT }}
+  SNOWSQL_USER: ${{ secrets.SNOWSQL_USER }}
+  SNOWSQL_PWD: ${{ secrets.SNOWSQL_PWD }}
+  SNOWSQL_DATABASE: ${{ secrets.SNOWSQL_DATABASE }}
+  SNOWSQL_SCHEMA: ${{ secrets.SNOWSQL_SCHEMA }}
+  SNOWSQL_WAREHOUSE: ${{ secrets.SNOWSQL_WAREHOUSE }}
+  ARTIFACT_NAME: scala-sources-${{ github.ref_name }}.jar
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: 'sbt'
+
+      - name: Run tests
+        run: sbt test
+
+      - name: Build app
+        run: sbt assembly
+
+      - name: Rename artifact with commit ID or release name
+        run: mv ${{ github.workspace }}/target/scala-2.12/template-scala*.jar ${{ env.ARTIFACT_NAME }}
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v2
+        with:
+          name: scala-app-${{ github.ref_name}}
+          path: ${{ env.ARTIFACT_NAME }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v3  # Necessary for the resources.sql file
+
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v2
+        with:
+          name: scala-app-${{github.ref_name}}
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.24-linux_x86_64.bash
+          SNOWSQL_DEST=~/snowflake SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.24-linux_x86_64.bash
+
+      - name: Deploy jobs
+        run: |
+          ~/snowflake/snowsql \
+            -f resources.sql \
+            -o variable_substitution=true \
+            --variable artifact_name=${{ env.ARTIFACT_NAME }}

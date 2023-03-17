@@ -1,0 +1,16 @@
+*.class
+*.log
+
+/target
+/project
+.bsp/
+.idea/
+
+.DS_Store
+
+# Scala plugins for VS Code
+.metals/
+.bloop/
+
+# Properties file for local development
+dev.properties
