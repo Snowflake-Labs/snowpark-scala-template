@@ -11,3 +11,4 @@ CREATE OR REPLACE PROCEDURE HELLO_WORLD_PROC()
   RUNTIME_VERSION = '2.12'
   IMPORTS = ('@artifacts/&artifact_name')
   HANDLER = 'org.example.procedure.App.run';
+
